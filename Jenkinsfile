@@ -10,7 +10,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo 'Deploying the project...'
-                sh 'node server.js'
+                sh 'npm run deploy'
             }
         }
     }

@@ -11,7 +11,7 @@ pipeline {
             steps {
                 echo 'Deploying the project...'
                 sh 'npm run serve'
-                echo 'Deployed"
+                echo 'Deployed'
             }
         }
     }

@@ -4,13 +4,14 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building the project...'
-                sh 'npm i express mongoose'
+                sh 'npm i express mongoose nodemon'
             }
         }
         stage('Deploy') {
             steps {
                 echo 'Deploying the project...'
-                sh 'npm run deploy'
+                sh 'npm run serve'
+                echo 'Deployed"
             }
         }
     }

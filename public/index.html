@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Blood Bank Management System</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<h1>Blood Bank Management System</h1>
+
+<!-- Form for creating a new blood bank -->
+<form id="createBloodBankForm">
+    <label for="name">Name:</label>
+    <input type="text" id="name" name="name" required>
+    <label for="location">Location:</label>
+    <input type="text" id="location" name="location" required>
+    <button type="submit">Create Blood Bank</button>
+</form>
+
+<!-- Form for updating an existing blood bank -->
+<form id="updateBloodBankForm">
+    <label for="updateId">ID:</label>
+    <input type="text" id="updateId" name="updateId" required>
+    <label for="updateName">Name:</label>
+    <input type="text" id="updateName" name="updateName" required>
+    <label for="updateLocation">Location:</label>
+    <input type="text" id="updateLocation" name="updateLocation" required>
+    <button type="submit">Update Blood Bank</button>
+</form>
+
+<!-- Form for deleting an existing blood bank -->
+<form id="deleteBloodBankForm">
+    <label for="deleteId">ID:</label>
+    <input type="text" id="deleteId" name="deleteId" required>
+    <button type="submit">Delete Blood Bank</button>
+</form>
+
+<!-- Container for displaying blood banks -->
+<div id="bloodBanks"></div>
+
+<script>
+    // Function to fetch blood banks and display them
+    async function displayBloodBanks() {
+        try {
+            const response = await fetch('/bloodbanks');
+            const bloodBanks = await response.json();
+            const bloodBanksHtml = bloodBanks.map(bloodBank => `<p>${bloodBank.name} - ${bloodBank.location}</p>`).join('');
+            document.getElementById('bloodBanks').innerHTML = bloodBanksHtml;
+        } catch (err) {
+            console.error('Error getting blood banks:', err);
+        }
+    }
+
+    // Function to create a new blood bank
+    async function createBloodBank(event) {
+        event.preventDefault();
+        const name = document.getElementById('name').value;
+        const location = document.getElementById('location').value;
+        try {
+            const response = await fetch('/bloodbanks', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, location })
+            });
+            const newBloodBank = await response.json();
+            console.log('New blood bank:', newBloodBank);
+            displayBloodBanks();
+        } catch (err) {
+            console.error('Error creating blood bank:', err);
+        }
+    }
+
+    // Function to update an existing blood bank
+    async function updateBloodBank(event) {
+        event.preventDefault();
+        const id = document.getElementById('updateId').value;
+        const name = document.getElementById('updateName').value;
+        const location = document.getElementById('updateLocation').value;
+        try {
+            const response = await fetch(`/bloodbanks/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, location })
+            });
+            const updatedBloodBank = await response.json();
+            console.log('Updated blood bank:', updatedBloodBank);
+            displayBloodBanks();
+        } catch (err) {
+            console.error('Error updating blood bank:', err);
+        }
+    }
+
+    // Function to delete an existing blood bank
+    async function deleteBloodBank(event) {
+        event.preventDefault();
+        const id = document.getElementById('deleteId').value;
+        try {
+            const response = await fetch(`/bloodbanks/${id}`, {
+                method: 'DELETE'
+            });
+            const deletedBloodBank = await response.json();
+            console.log('Deleted blood bank:', deletedBloodBank);
+            displayBloodBanks();
+        } catch (err) {
+            console.error('Error deleting blood bank:', err);
+        }
+    }
+
+    // Event listeners for form submissions
+    document.getElementById('createBloodBankForm').addEventListener('submit', createBloodBank);
+    document.getElementById('updateBloodBankForm').addEventListener('submit', updateBloodBank);
+    document.getElementById('deleteBloodBankForm').addEventListener('submit', deleteBloodBank);
+
+    // Display blood banks when the page loads
+    displayBloodBanks();
+</script>
+</body>
+</html>

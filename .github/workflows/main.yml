@@ -1,0 +1,82 @@
+name: Dev-VM Auto Stop and Start
+
+on:
+  workflow_dispatch:
+    inputs:
+      choice:
+        description: 'Choose whether to Start or Stop the VM'
+        required: true
+        type: choice
+        options:
+          - Start
+          - Stop
+
+# env:
+#   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+jobs:
+  Dev-VM:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Authenticate with Azure
+        uses: azure/login@v1
+        with:
+          creds: '{"clientId":"${{ secrets.CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ secrets.SUBSCRIPTION_ID }}","tenantId":"${{ secrets.TENANT_ID}}"}'
+
+      - name: Determine Action (Start or Stop)
+        id: action
+        run: |
+          if [[ "${{ github.event_name }}" == "schedule" && "${{ github.event.schedule }}" == "30 17 * * 1-5" ]]; then
+            echo "action=Stop" >> $GITHUB_ENV
+          elif [[ "${{ github.event_name }}" == "schedule" && "${{ github.event.schedule }}" == "30 2 * * 1-5" ]]; then
+            echo "action=Start" >> $GITHUB_ENV
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "action=${{ github.event.inputs.choice }}" >> $GITHUB_ENV
+          fi
+        
+
+      - name: Stop Azure VM (When action is Stop)
+        if: env.action == 'Stop'
+        run: |
+          echo "Stopping the Azure VM..."
+          az vm stop --resource-group test_group --name AutoStopDev
+      
+      # This will only send slack message on stop event
+      - name: Post to Slack - Stop
+        uses: act10ns/slack@v1
+        if: success() && env.action == 'Stop'
+        with:
+         status: ${{ job.status }}
+         channel: '#cicd-cxo'
+         message: " *Dev Environment has been Shutdown!* "  
+
+      - name: Start Azure VM (When action is Start)
+        if: env.action == 'Start'
+        run: |
+          echo "Starting the Azure VM..."
+          az vm start --resource-group test_group --name AutoStopDev
+
+
+    # For explicitly restarting nginx server
+      # - name: Starting Nginx Server
+      #   if: env.action == 'Start'
+      #   env:
+      #     PRIVATE_KEY: ${{ secrets.AZURE_VM_PRIVATE_KEY  }}
+      #     HOSTNAME : ${{ secrets.AZURE_VM_HOST  }}
+      #     USER_NAME : ${{ secrets.AZURE_VM_USER  }}
+
+      #   run: |
+      #     echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+      #     ssh -i private_key -o 'StrictHostKeyChecking=no' ${USER_NAME}@${HOSTNAME} "
+      #     ./restart-nginx.sh"
+
+      
+    # # This will only send slack message on start event
+    #   - name: Post to Slack - Start
+    #     uses: act10ns/slack@v1
+    #     if: success() && env.action == 'Start'
+    #     with:
+    #      status: ${{ job.status }}
+    #      channel: '#cicd-cxo'
+    #      message: " *TeamSuite Dev Environment has been Started!* "

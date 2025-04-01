@@ -11,5 +11,11 @@ jobs:
 
     steps:
       - name: SSH into VM and list containers
+        env:
+            PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY  }}
+            HOSTNAME : ${{ secrets.SSH_HOST  }}
+            USER_NAME : ${{ secrets.SSH_USER  }}
         run: |
-          ssh -i ${{ secrets.SSH_PRIVATE_KEY }} -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "docker ps -a"
+            echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+            ssh -i private_key -o 'StrictHostKeyChecking=no' ${USER_NAME}@${HOSTNAME} "
+            docker ps -a "

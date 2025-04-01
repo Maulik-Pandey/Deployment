@@ -1,46 +1,15 @@
-name: VM Stop and Start with Cron or Manual Trigger
+name: SSH to VM and List Containers
 
 on:
-  workflow_dispatch:
-    inputs:
-      choice:
-        description: 'Choose whether to Start or Stop the VM'
-        required: true
-        type: choice
-        options:
-          - Start
-          - Stop
+  push:
+    branches:
+      - main  # Trigger the action on push to the main branch
 
 jobs:
-  vm-action:
+  ssh-and-list-containers:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+
     steps:
-      - name: Authenticate with Azure
-        uses: azure/login@v1
-        with:
-          creds: '{"clientId":"${{ secrets.CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ secrets.SUBSCRIPTION_ID }}","tenantId":"${{ secrets.TENANT_ID}}"}'
-
-      - name: Determine Action (Start or Stop)
-        id: action
+      - name: SSH into VM and list containers
         run: |
-          if [[ "${{ github.event_name }}" == "schedule" && "${{ github.event.schedule }}" == "30 17 * * 1-5" ]]; then
-            echo "action=Stop" >> $GITHUB_ENV
-          elif [[ "${{ github.event_name }}" == "schedule" && "${{ github.event.schedule }}" == "30 2 * * 1-5" ]]; then
-            echo "action=Start" >> $GITHUB_ENV
-          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "action=${{ github.event.inputs.choice }}" >> $GITHUB_ENV
-          fi
-        
-
-      - name: Stop Azure VM (when action is Stop)
-        if: env.action == 'Stop'
-        run: |
-          echo "Stopping the Azure VM..."
-          az vm stop --resource-group test_group --name AutoStopDev
-
-      - name: Start Azure VM (when action is Start)
-        if: env.action == 'Start'
-        run: |
-          echo "Starting the Azure VM..."
-          az vm start --resource-group test_group --name AutoStopDev
+          ssh -i ${{ secrets.SSH_PRIVATE_KEY }} -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "docker ps -a"
